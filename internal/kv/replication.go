@@ -35,6 +35,10 @@ func (s *Store) Replicate(ctx context.Context, r io.Reader) (ReplicationReport, 
 			}
 			continue
 		}
+		if !ShouldRestore(record.ExpiresAt, time.Now()) {
+			out.Skipped++
+			continue
+		}
 		if ok, err := s.Has(record.Key); err != nil {
 			return out, err
 		} else if ok {
