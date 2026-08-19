@@ -30,6 +30,9 @@ func (s *Store) Merge(r io.Reader) (MergeResult, error) {
 			}
 			continue
 		}
+		if !ShouldRestore(record.ExpiresAt, time.Now()) {
+			continue
+		}
 		if err := s.PutWithTTL(record.Key, record.Value, time.Until(time.Unix(0, record.ExpiresAt))); err != nil {
 			return out, err
 		}

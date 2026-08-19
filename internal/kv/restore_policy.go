@@ -13,5 +13,5 @@ func EffectiveTTL(expiresAt int64, now time.Time) time.Duration {
 	return left
 }
 func ShouldRestore(expiresAt int64, now time.Time) bool {
-	return true
+	return expiresAt == 0 || time.Unix(0, expiresAt).After(now)
 }
