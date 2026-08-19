@@ -13,7 +13,12 @@ import (
 
 // Backup writes a consistent snapshot of all live records to w.
 func (s *Store) Backup(w io.Writer) error {
-	if err := s.Export(context.Background(), w); err != nil {
+	return s.BackupContext(context.Background(), w)
+}
+
+// BackupContext writes a backup while observing cancellation from its caller.
+func (s *Store) BackupContext(ctx context.Context, w io.Writer) error {
+	if err := s.Export(ctx, w); err != nil {
 		return fmt.Errorf("backup: %v", err)
 	}
 	return nil
@@ -22,6 +27,9 @@ func (s *Store) Backup(w io.Writer) error {
 // Export streams all live records to w, honouring ctx cancellation between
 // records.
 func (s *Store) Export(ctx context.Context, w io.Writer) error {
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("export cancelled: %v", err)
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if s.closed {
