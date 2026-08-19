@@ -323,6 +323,9 @@ func (s *Store) Keys(prefix string) ([]string, error) {
 // RangeScan returns live key/value pairs with start <= key < end, sorted by
 // key. An empty result is returned as a non-nil empty slice.
 func (s *Store) RangeScan(start, end string) ([]KeyValue, error) {
+	if end != "" && start > end {
+		return nil, errors.ErrInvalidKey
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if s.closed {
