@@ -15,6 +15,7 @@ type Query struct {
 }
 
 func (s *Store) Query(q Query) ([]KeyValue, error) {
+	q = NormalizeQuery(q)
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if s.closed {

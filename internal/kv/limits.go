@@ -7,6 +7,9 @@ func NormalizeQuery(q Query) Query {
 	if q.MaxSize < 0 {
 		q.MaxSize = 0
 	}
+	if q.MaxSize > 0 && q.MinSize > q.MaxSize {
+		q.MinSize, q.MaxSize = q.MaxSize, q.MinSize
+	}
 	return q
 }
 
