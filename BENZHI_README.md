@@ -20,7 +20,7 @@ logkv 是一个 Bitcask 风格的嵌入式键值存储库，使用 bbolt 作为�
 - 测试：`go test ./...`
 - 静态检查：`go vet ./...`
 
-本项目为纯 Go 项目，使用 Go 1.26.3（`GOTOOLCHAIN=local`，`go.mod` 语言版本 `go 1.26.3`），依赖 bbolt 并已执行 `go mod vendor`，构建与测试使用 `-mod=vendor`。
+本项目为纯 Go 项目，使用 Go 1.26.3（`GOTOOLCHAIN=local`，`go.mod` 语言版本 `go 1.26.3`）。依赖通过 Go module mode 下载；仓库不提交 `vendor/`，构建与测试不使用 `-mod` 参数。
 
 ## Benzhi Docker 构建
 
@@ -33,7 +33,7 @@ logkv 是一个 Bitcask 风格的嵌入式键值存储库，使用 bbolt 作为�
 ./build_benzhi_docker.sh my-logkv linux/arm64
 ```
 
-镜像基于 `golang:1.26.3`，启动后进入 bash 便于交互排查。运行时可直接执行：
+镜像基于 `docker.m.daocloud.io/library/golang:1.26.3-bookworm`，启动后进入 bash 便于交互排查。运行时可直接执行：
 
 ```bash
 docker run -it my-logkv:latest

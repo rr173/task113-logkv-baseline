@@ -95,6 +95,11 @@ func Open(path string) (*Store, error) {
 		return nil, err
 	}
 	s.ttl = ttl.NewManager(s)
+	for key, rec := range s.idx {
+		if !rec.deleted && rec.expiresAt > 0 {
+			s.ttl.Schedule(key, rec.expiresAt)
+		}
+	}
 	s.ttl.Start()
 	return s, nil
 }

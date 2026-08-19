@@ -65,6 +65,12 @@ func (s *Store) Restore(r io.Reader) error {
 	}
 	if err := s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bucketName)
+		cur := b.Cursor()
+		for key, _ := cur.First(); key != nil; key, _ = cur.Next() {
+			if e := cur.Delete(); e != nil {
+				return e
+			}
+		}
 		for k, r := range loaded {
 			if e := b.Put([]byte(k), marshalRecord(r)); e != nil {
 				return e
@@ -74,11 +80,13 @@ func (s *Store) Restore(r io.Reader) error {
 	}); err != nil {
 		return err
 	}
+	for k := range s.idx {
+		s.ttl.Unschedule(k)
+	}
+	s.idx = make(map[string]*record, len(loaded))
 	for k, r := range loaded {
 		cp := r
-		// The decoded value is intentionally cleared before it is indexed;
-		// the on-disk record already holds the authoritative bytes.
-		cp.value = nil
+		cp.value = append([]byte(nil), r.value...)
 		s.idx[k] = &cp
 		if r.expiresAt > 0 && !r.deleted {
 			s.ttl.Schedule(k, r.expiresAt)
