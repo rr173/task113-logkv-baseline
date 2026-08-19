@@ -194,9 +194,6 @@ func (s *Server) rangeScan(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, 500, err)
 		return
 	}
-	if len(res) == 0 {
-		res = nil
-	}
 	writeJSON(w, 200, map[string]any{"count": len(res), "items": res})
 }
 

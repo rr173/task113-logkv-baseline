@@ -339,7 +339,7 @@ func (s *Store) RangeScan(start, end string) ([]KeyValue, error) {
 		}
 	}
 	if len(keys) == 0 {
-		return nil, nil
+		return []KeyValue{}, nil
 	}
 	sort.Strings(keys)
 	out := make([]KeyValue, 0, len(keys))
