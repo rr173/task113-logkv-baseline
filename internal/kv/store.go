@@ -214,7 +214,7 @@ func (s *Store) Get(key string) ([]byte, error) {
 		return nil, errors.ErrNotFound
 	}
 	if r.expiresAt > 0 && r.expiresAt <= time.Now().UnixNano() {
-		return nil, fmt.Errorf("expired key %q", key)
+		return nil, fmt.Errorf("expired key %q: %w", key, errors.ErrTTLExpired)
 	}
 	return append([]byte(nil), r.value...), nil
 }

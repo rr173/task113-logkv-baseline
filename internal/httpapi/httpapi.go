@@ -100,7 +100,7 @@ func (s *Server) get(w http.ResponseWriter, r *http.Request) {
 	key := r.PathValue("key")
 	val, err := s.store.Get(key)
 	if err != nil {
-		if err == errors.ErrNotFound {
+		if errors.IsMissing(err) {
 			writeJSON(w, 404, map[string]any{"found": false, "key": key})
 			return
 		}
