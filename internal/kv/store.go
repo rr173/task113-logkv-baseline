@@ -321,8 +321,13 @@ func (s *Store) Keys(prefix string) ([]string, error) {
 }
 
 // RangeScan returns live key/value pairs with start <= key < end, sorted by
-// key. An empty result is returned as a non-nil empty slice.
+// key. An empty result is returned as a non-nil empty slice. It returns
+// ErrInvalidRange when start sorts after end, so callers can distinguish a
+// reversed range from a genuinely empty one.
 func (s *Store) RangeScan(start, end string) ([]KeyValue, error) {
+	if start > end {
+		return nil, errors.ErrInvalidRange
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if s.closed {

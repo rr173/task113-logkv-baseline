@@ -19,3 +19,7 @@ var ErrTTLExpired = errors.New("logkv: key expired")
 // ErrAlreadyExists is returned when an atomic create collides with an existing
 // live key.
 var ErrAlreadyExists = errors.New("logkv: key already exists")
+
+// ErrInvalidRange is returned when a range scan's start key sorts after its end
+// key, which would otherwise silently yield an empty result.
+var ErrInvalidRange = errors.New("logkv: invalid range")

@@ -191,6 +191,10 @@ func (s *Server) rangeScan(w http.ResponseWriter, r *http.Request) {
 	}
 	res, err := s.store.RangeScan(start, end)
 	if err != nil {
+		if err == errors.ErrInvalidRange {
+			writeErr(w, 400, err)
+			return
+		}
 		writeErr(w, 500, err)
 		return
 	}
