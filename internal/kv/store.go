@@ -4,7 +4,6 @@ package kv
 
 import (
 	"encoding/binary"
-	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -214,7 +213,7 @@ func (s *Store) Get(key string) ([]byte, error) {
 		return nil, errors.ErrNotFound
 	}
 	if r.expiresAt > 0 && r.expiresAt <= time.Now().UnixNano() {
-		return nil, fmt.Errorf("expired key %q", key)
+		return nil, errors.ErrNotFound
 	}
 	return append([]byte(nil), r.value...), nil
 }
