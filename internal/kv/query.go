@@ -20,6 +20,7 @@ func (s *Store) Query(q Query) ([]KeyValue, error) {
 	if s.closed {
 		return nil, errors.ErrClosed
 	}
+	q = NormalizeQuery(q)
 	now := time.Now().UnixNano()
 	out := make([]KeyValue, 0)
 	for key, record := range s.idx {

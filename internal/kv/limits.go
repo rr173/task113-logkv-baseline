@@ -7,6 +7,12 @@ func NormalizeQuery(q Query) Query {
 	if q.MaxSize < 0 {
 		q.MaxSize = 0
 	}
+	// Normalize reversed bounds: when the caller writes min and max in the
+	// wrong order, treat the range as [min, max] so the query returns the
+	// intuitively expected set instead of an empty result.
+	if q.MinSize > 0 && q.MaxSize > 0 && q.MinSize > q.MaxSize {
+		q.MinSize, q.MaxSize = q.MaxSize, q.MinSize
+	}
 	return q
 }
 
