@@ -11,9 +11,11 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-// Backup writes a consistent snapshot of all live records to w.
-func (s *Store) Backup(w io.Writer) error {
-	if err := s.Export(context.Background(), w); err != nil {
+// Backup writes a consistent snapshot of all live records to w, honouring
+// ctx cancellation between records. When ctx is cancelled the in-flight backup
+// is aborted and the returned error wraps ctx.Err().
+func (s *Store) Backup(ctx context.Context, w io.Writer) error {
+	if err := s.Export(ctx, w); err != nil {
 		return fmt.Errorf("backup: %v", err)
 	}
 	return nil

@@ -75,7 +75,7 @@ func SmokeTest() error {
 	}
 
 	var buf bytes.Buffer
-	if err := store.Backup(&buf); err != nil {
+	if err := store.Backup(context.Background(), &buf); err != nil {
 		return err
 	}
 	if err := store.Restore(&buf); err != nil {

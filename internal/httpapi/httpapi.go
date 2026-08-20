@@ -2,7 +2,9 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
+	stderrors "errors"
 	"io"
 	"net/http"
 	"strconv"
@@ -268,7 +270,11 @@ func (s *Server) exportHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) backup(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
-	if err := s.store.Backup(w); err != nil {
+	if err := s.store.Backup(r.Context(), w); err != nil {
+		if stderrors.Is(r.Context().Err(), context.Canceled) {
+			writeErr(w, http.StatusRequestTimeout, err)
+			return
+		}
 		writeErr(w, 500, err)
 	}
 }

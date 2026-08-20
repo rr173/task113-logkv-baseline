@@ -2,6 +2,7 @@ package kv
 
 import (
 	"bytes"
+	"context"
 	"path/filepath"
 	"testing"
 	"time"
@@ -19,7 +20,7 @@ func TestRestoreReplacesContentsAndPreservesValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	var backup bytes.Buffer
-	if err := source.Backup(&backup); err != nil {
+	if err := source.Backup(context.Background(), &backup); err != nil {
 		t.Fatal(err)
 	}
 
