@@ -194,8 +194,10 @@ func (s *Server) rangeScan(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, 500, err)
 		return
 	}
-	if len(res) == 0 {
-		res = nil
+	if res == nil {
+		// Keep a stable JSON array ([]) for empty results so clients can
+		// iterate items directly without a nil check.
+		res = make([]kv.KeyValue, 0)
 	}
 	writeJSON(w, 200, map[string]any{"count": len(res), "items": res})
 }

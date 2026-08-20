@@ -339,7 +339,9 @@ func (s *Store) RangeScan(start, end string) ([]KeyValue, error) {
 		}
 	}
 	if len(keys) == 0 {
-		return nil, nil
+		// Honor the documented contract: an empty result is a non-nil
+		// empty slice so JSON encoders emit [] rather than null.
+		return []KeyValue{}, nil
 	}
 	sort.Strings(keys)
 	out := make([]KeyValue, 0, len(keys))
