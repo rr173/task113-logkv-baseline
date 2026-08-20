@@ -35,6 +35,14 @@ func (s *Store) Replicate(ctx context.Context, r io.Reader) (ReplicationReport, 
 			}
 			continue
 		}
+		// Skip records that are already expired on the remote: writing them
+		// would make the stale value briefly visible in the local index and
+		// surface as ErrTTLExpired instead of an absent key.
+		now := time.Now().UnixNano()
+		if record.ExpiresAt > 0 && record.ExpiresAt <= now {
+			out.Skipped++
+			continue
+		}
 		if ok, err := s.Has(record.Key); err != nil {
 			return out, err
 		} else if ok {
