@@ -30,7 +30,18 @@ func (s *Store) Merge(r io.Reader) (MergeResult, error) {
 			}
 			continue
 		}
-		if err := s.PutWithTTL(record.Key, record.Value, time.Until(time.Unix(0, record.ExpiresAt))); err != nil {
+		// Skip records that are already expired by the time we merge them.
+		// Otherwise PutWithTTL receives a non-positive (negative) duration,
+		// clears the expiry, and writes the record as permanent — reviving
+		// data that should have disappeared.
+		if record.ExpiresAt > 0 && record.ExpiresAt <= time.Now().UnixNano() {
+			continue
+		}
+		var ttlDur time.Duration
+		if record.ExpiresAt > 0 {
+			ttlDur = time.Until(time.Unix(0, record.ExpiresAt))
+		}
+		if err := s.PutWithTTL(record.Key, record.Value, ttlDur); err != nil {
 			return out, err
 		}
 		out.Written++
