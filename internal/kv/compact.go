@@ -9,7 +9,7 @@ import (
 
 // Compact reclaims space by rewriting the bucket with only live records,
 // discarding tombstones and expired entries. It rebuilds the in-memory index
-// to match.
+// and the TTL tracker to match.
 func (s *Store) Compact() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -43,10 +43,18 @@ func (s *Store) Compact() error {
 	if err != nil {
 		return err
 	}
+	// Drop expiry tracking for every key that is no longer present so the TTL
+	// snapshot reflects actual storage, then reschedule the surviving keys.
+	for k := range s.idx {
+		s.ttl.Unschedule(k)
+	}
 	s.idx = make(map[string]*record, len(live))
 	for k, r := range live {
 		cp := r
 		s.idx[k] = &cp
+		if r.expiresAt > 0 && !r.deleted {
+			s.ttl.Schedule(k, r.expiresAt)
+		}
 	}
 	s.compactions++
 	s.lastCompact = now
