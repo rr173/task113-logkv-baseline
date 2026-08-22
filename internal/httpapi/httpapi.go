@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -217,12 +218,28 @@ func (s *Server) size(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) ttlKeys(w http.ResponseWriter, r *http.Request) {
-	keys, err := s.store.Keys("")
+	// Inspect already filters to live keys via isLive, which excludes keys
+	// that are expired but not yet swept. We further keep only keys that carry
+	// a real expiry so callers can manage data that is about to expire, never
+	// mixing in permanent keys.
+	items, err := s.store.Inspect("")
 	if err != nil {
 		writeErr(w, 500, err)
 		return
 	}
-	writeJSON(w, 200, map[string]any{"count": len(keys), "keys": keys})
+	type ttlKey struct {
+		Key       string `json:"key"`
+		ExpiresAt int64  `json:"expires_at"`
+	}
+	out := make([]ttlKey, 0, len(items))
+	for _, it := range items {
+		if it.ExpiresAt > 0 {
+			out = append(out, ttlKey{Key: it.Key, ExpiresAt: it.ExpiresAt})
+		}
+	}
+	// Soonest-expiring first so callers see the most urgent keys up top.
+	sort.Slice(out, func(i, j int) bool { return out[i].ExpiresAt < out[j].ExpiresAt })
+	writeJSON(w, 200, map[string]any{"count": len(out), "keys": out})
 }
 
 func (s *Server) compact(w http.ResponseWriter, r *http.Request) {
