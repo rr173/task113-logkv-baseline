@@ -80,6 +80,12 @@ func (s *Store) Restore(r io.Reader) error {
 	}); err != nil {
 		return err
 	}
+	// The on-disk contents were wholesale replaced, so the previous TTL plan
+	// must not survive: Schedule is add-if-absent and would otherwise leave a
+	// replaced key on its stale (often earlier) expiry, and keys dropped by the
+	// restore would linger as orphaned plans. Reset, then rebuild only from the
+	// restored records so the plan matches the new keyset exactly.
+	s.ttl.Reset()
 	s.idx = make(map[string]*record, len(loaded))
 	for k, r := range loaded {
 		cp := r
@@ -87,8 +93,6 @@ func (s *Store) Restore(r io.Reader) error {
 		s.idx[k] = &cp
 		if r.expiresAt > 0 && !r.deleted {
 			s.ttl.Schedule(k, r.expiresAt)
-		} else {
-			s.ttl.Unschedule(k)
 		}
 	}
 	return nil

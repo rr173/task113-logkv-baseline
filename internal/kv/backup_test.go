@@ -66,3 +66,61 @@ func TestOpenReschedulesPersistedTTL(t *testing.T) {
 		t.Fatalf("tracked TTLs = %+v, want ephemeral", tracked)
 	}
 }
+
+func TestRestoreRebuildsTTLPlanToMatchRestoredKeys(t *testing.T) {
+	destination, err := Open(filepath.Join(t.TempDir(), "destination.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer destination.Close()
+	// Stale state before restore: "kept" carries a soon-ish expiry and "dropped"
+	// a far-future one. Both pre-exist in the TTL plan.
+	staleExpiry := time.Now().Add(2 * time.Second)
+	if err := destination.PutWithTTL("kept", []byte("old"), time.Until(staleExpiry)); err != nil {
+		t.Fatal(err)
+	}
+	if err := destination.PutWithTTL("dropped", []byte("old"), time.Hour); err != nil {
+		t.Fatal(err)
+	}
+
+	var backup bytes.Buffer
+	source, err := Open(filepath.Join(t.TempDir(), "source.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer source.Close()
+	// "kept" is replaced with a long-lived value; "dropped" is absent from the
+	// backup; "fresh" is brand new.
+	if err := source.PutWithTTL("kept", []byte("new"), time.Hour); err != nil {
+		t.Fatal(err)
+	}
+	if err := source.Put("fresh", []byte("value")); err != nil {
+		t.Fatal(err)
+	}
+	if err := source.Backup(&backup); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := destination.Restore(&backup); err != nil {
+		t.Fatal(err)
+	}
+	tracked := destination.TTLSnapshot()
+	byKey := make(map[string]int64, len(tracked))
+	for _, e := range tracked {
+		byKey[e.Key] = e.At
+	}
+	if _, ok := byKey["dropped"]; ok {
+		t.Fatalf("dropped key still tracked after restore: %+v", tracked)
+	}
+	if _, ok := byKey["fresh"]; ok {
+		t.Fatalf("fresh key without TTL should not be tracked: %+v", tracked)
+	}
+	keptAt, ok := byKey["kept"]
+	if !ok {
+		t.Fatalf("kept key not tracked after restore: %+v", tracked)
+	}
+	if keptAt <= staleExpiry.UnixNano() {
+		t.Fatalf("kept key still on stale expiry %d (restored plan must use the restored expiry > %d)",
+			keptAt, staleExpiry.UnixNano())
+	}
+}

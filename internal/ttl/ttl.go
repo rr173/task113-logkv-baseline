@@ -55,6 +55,15 @@ func (m *Manager) Unschedule(key string) {
 	m.mu.Unlock()
 }
 
+// Reset drops every tracked expiry. Callers that wholesale replace the keyset
+// (such as Store.Restore) use it so the pending expiry plan matches only the
+// new records, instead of retaining stale plans for replaced or dropped keys.
+func (m *Manager) Reset() {
+	m.mu.Lock()
+	m.expiries = make(map[string]int64)
+	m.mu.Unlock()
+}
+
 // Len returns the number of tracked keys.
 func (m *Manager) Len() int {
 	m.mu.Lock()
